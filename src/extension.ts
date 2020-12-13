@@ -100,8 +100,17 @@ export function activate(context: vscode.ExtensionContext) {
 	// This provider provides intellisense for Duomo classes on hover.
 	const provider3 = vscode.languages.registerHoverProvider("html", {
 		provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-			const markdown = new vscode.MarkdownString("test `test` test")
-			return new vscode.Hover(markdown)
+			const range = document.getWordRangeAtPosition(position)
+			const word = document.getText(range)
+
+			switch (word) {
+				case "hstack":
+					return new vscode.Hover(new vscode.MarkdownString(hstackDocs))
+				case "vstack":
+					return new vscode.Hover(new vscode.MarkdownString(vstackDocs))
+				case "zstack":
+					return new vscode.Hover(new vscode.MarkdownString(zstackDocs))
+			}
 		},
 	})
 
