@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode"
 
 const hstackDocs = `**HStack** stacks children horizontally.
 
@@ -12,7 +12,7 @@ const hstackDocs = `**HStack** stacks children horizontally.
 </div>
 \`\`\`
 
-Note that children are automatically centered.`;
+Note that children are automatically centered.`
 
 const vstackDocs = `**VStack** stacks children vertically.
 
@@ -26,7 +26,7 @@ const vstackDocs = `**VStack** stacks children vertically.
 </div>
 \`\`\`
 
-Note that children are automatically centered.`;
+Note that children are automatically centered.`
 
 const zstackDocs = `**ZStack** stacks children on top of each other.
 
@@ -40,57 +40,70 @@ const zstackDocs = `**ZStack** stacks children on top of each other.
 </div>
 \`\`\`
 
-Note that children are automatically centered.`;
+Note that children are automatically centered.`
 
-const hstackAutocomplete = new vscode.CompletionItem('hstack ');
-hstackAutocomplete.kind = vscode.CompletionItemKind.Constant;
-hstackAutocomplete.documentation = new vscode.MarkdownString(hstackDocs);
-hstackAutocomplete.command = {
-	command: 'editor.action.triggerSuggest',
-	title: 'Re-trigger completions...',
-};
+const hstackCompletion = new vscode.CompletionItem("hstack ")
+hstackCompletion.kind = vscode.CompletionItemKind.Constant
+hstackCompletion.documentation = new vscode.MarkdownString(hstackDocs)
+hstackCompletion.command = {
+	command: "editor.action.triggerSuggest",
+	title: "Re-trigger completions...",
+}
 
-const vstackAutoComplete = new vscode.CompletionItem('vstack ');
-vstackAutoComplete.kind = vscode.CompletionItemKind.Constant;
-vstackAutoComplete.documentation = new vscode.MarkdownString(vstackDocs);
-vstackAutoComplete.command = {
-	command: 'editor.action.triggerSuggest',
-	title: 'Re-trigger completions...',
-};
+const vstackCompletion = new vscode.CompletionItem("vstack ")
+vstackCompletion.kind = vscode.CompletionItemKind.Constant
+vstackCompletion.documentation = new vscode.MarkdownString(vstackDocs)
+vstackCompletion.command = {
+	command: "editor.action.triggerSuggest",
+	title: "Re-trigger completions...",
+}
 
-const zstackAutoComplete = new vscode.CompletionItem('zstack ');
-zstackAutoComplete.kind = vscode.CompletionItemKind.Constant;
-zstackAutoComplete.documentation = new vscode.MarkdownString(zstackDocs);
-zstackAutoComplete.command = {
-	command: 'editor.action.triggerSuggest',
-	title: 'Re-trigger completions...',
-};
+const zstackCompletion = new vscode.CompletionItem("zstack ")
+zstackCompletion.kind = vscode.CompletionItemKind.Constant
+zstackCompletion.documentation = new vscode.MarkdownString(zstackDocs)
+zstackCompletion.command = {
+	command: "editor.action.triggerSuggest",
+	title: "Re-trigger completions...",
+}
 
+const completions = [hstackCompletion, vstackCompletion, zstackCompletion]
+
+// TODO: Extend completion support for `htm html js jsx ts tsx` extensions.
+// This may need to expand over time to support non-standard filetypes.
 export function activate(context: vscode.ExtensionContext) {
-	const provider1 = vscode.languages.registerCompletionItemProvider('html', {
-		provideCompletionItems(
-			document: vscode.TextDocument,
-			position: vscode.Position,
-			token: vscode.CancellationToken,
-			context: vscode.CompletionContext
-		) {
-			return [hstackAutocomplete, vstackAutoComplete, zstackAutoComplete];
+	// This provider provides intellisense for Duomo classes anywhere.
+	const provider1 = vscode.languages.registerCompletionItemProvider("html", {
+		provideCompletionItems() {
+			// TODO: Scope these completions to the contents of `class="..."`.
+			// Completions probably shouldn’t appear outside of the context of a class.
+			return completions
 		},
-	});
+	})
 
+	// This provider provides intellisense for Duomo classes when the line ends with `class="`.
+	// This is simply a heuristic but it make sense to target `class="..."`. Finally,
+	// JSX and TSX files could simply trigger on `className="..."`.
 	const provider2 = vscode.languages.registerCompletionItemProvider(
-		'html',
+		"html",
 		{
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-				const linePrefix = document.lineAt(position).text.substr(0, position.character);
+				const linePrefix = document.lineAt(position).text.substr(0, position.character)
 				if (!linePrefix.endsWith('class="')) {
-					return undefined;
+					return undefined
 				}
-				return [hstackAutocomplete, vstackAutoComplete, zstackAutoComplete];
+				return completions
 			},
 		},
-		'"'
-	);
+		'"',
+	)
 
-	context.subscriptions.push(provider1, provider2);
+	// This provider provides intellisense for Duomo classes on hover.
+	const provider3 = vscode.languages.registerHoverProvider("html", {
+		provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+			const markdown = new vscode.MarkdownString("test `test` test")
+			return new vscode.Hover(markdown)
+		},
+	})
+
+	context.subscriptions.push(provider2, provider3)
 }
