@@ -42,6 +42,9 @@ const zstackDocs = `**ZStack** stacks children on top of each other.
 
 Note that children are automatically centered.`
 
+// TODO: Remove trailing space. The trailing space prevents completions from
+// appearing in between classes. In order for completions to appear in between
+// classes, `provider2` needs to be scoped to anywhere inside of `class="..."`.
 const hstackCompletion = new vscode.CompletionItem("hstack ")
 hstackCompletion.kind = vscode.CompletionItemKind.Constant
 hstackCompletion.documentation = new vscode.MarkdownString(hstackDocs)
@@ -72,6 +75,10 @@ const completions = [hstackCompletion, vstackCompletion, zstackCompletion]
 // This may need to expand over time to support non-standard filetypes.
 export function activate(context: vscode.ExtensionContext) {
 	// This provider provides intellisense for Duomo classes anywhere.
+	//
+	// TODO: This provider should be deprecated; in theory we only need providers
+	// for typing scoped to in between the quotes of `class="..."` and on hover for
+	// matching classes.
 	const provider1 = vscode.languages.registerCompletionItemProvider("html", {
 		provideCompletionItems() {
 			// TODO: Scope these completions to the contents of `class="..."`.
@@ -87,6 +94,8 @@ export function activate(context: vscode.ExtensionContext) {
 		"html",
 		{
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				// TODO: Trigger completions anywhere in the scope of `class="..."`
+				// not just the start; `class="`.
 				const linePrefix = document.lineAt(position).text.substr(0, position.character)
 				if (!linePrefix.endsWith('class="')) {
 					return undefined
@@ -103,13 +112,16 @@ export function activate(context: vscode.ExtensionContext) {
 			const range = document.getWordRangeAtPosition(position)
 			const word = document.getText(range)
 
-			switch (word) {
-				case "hstack":
-					return new vscode.Hover(new vscode.MarkdownString(hstackDocs))
-				case "vstack":
-					return new vscode.Hover(new vscode.MarkdownString(vstackDocs))
-				case "zstack":
-					return new vscode.Hover(new vscode.MarkdownString(zstackDocs))
+			if (word) {
+				const match = ({
+					hstack: hstackDocs,
+					vstack: vstackDocs,
+					zstack: zstackDocs,
+				} as any)[word] // FIXME
+				if (match) {
+					const markdown = new vscode.MarkdownString(match)
+					return new vscode.Hover(markdown)
+				}
 			}
 		},
 	})
